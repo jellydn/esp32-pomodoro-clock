@@ -1,0 +1,4 @@
+.pio/
+.vscode/
+include/wifi_config.h
+compile_commands.json
