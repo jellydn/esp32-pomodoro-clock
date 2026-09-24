@@ -89,7 +89,7 @@ esp32-pomodoro-clock/
 │   ├── services/        # Wi-Fi, time, settings, and session persistence
 │   └── ui/              # LVGL screen and input actions
 ├── test/native/         # Host-side engine tests
-├── docs/                # Hardware evidence and acceptance checklist
+├── docs/                # Hardware evidence, acceptance checklist, and architecture decisions
 ├── platformio.ini
 └── justfile
 ```
