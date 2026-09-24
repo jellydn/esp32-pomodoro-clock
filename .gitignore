@@ -1,4 +1,5 @@
 .pio/
 .vscode/
+.amp/portals/*
 include/wifi_config.h
 compile_commands.json

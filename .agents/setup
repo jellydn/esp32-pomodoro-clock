@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly PLATFORMIO_VERSION="6.1.18"
+readonly PREK_VERSION="0.5.3"
+readonly JUST_VERSION="1.42.4"
+
+export PATH="$HOME/.local/bin:$PATH"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+
+printf '[setup] Installing command-line tools\n'
+if [[ "$(pio --version 2>/dev/null || true)" != *"$PLATFORMIO_VERSION"* ]]; then
+  uv tool install --force "platformio==$PLATFORMIO_VERSION"
+fi
+
+if [[ "$(prek --version 2>/dev/null || true)" != *"$PREK_VERSION"* ]]; then
+  uv tool install --force "prek==$PREK_VERSION"
+fi
+
+if [[ "$(just --version 2>/dev/null || true)" != "just $JUST_VERSION" ]]; then
+  case "$(uname -m)" in
+    x86_64)
+      just_target="x86_64-unknown-linux-musl"
+      just_sha256="678efc1cfbd5fa5a88375daa7e2f3864a049d6d63a0296df925a2ae5f516cb56"
+      ;;
+    aarch64|arm64)
+      just_target="aarch64-unknown-linux-musl"
+      just_sha256="beb35a4ed1208ffbb0fef26042c65875759a5358b9ee1a7856dec8490dfd4aca"
+      ;;
+    *)
+      printf '[setup] Unsupported architecture for just: %s\n' "$(uname -m)" >&2
+      exit 1
+      ;;
+  esac
+
+  (
+    download_dir="$(mktemp -d)"
+    trap 'rm -rf "$download_dir"' EXIT
+    archive="just-$JUST_VERSION-$just_target.tar.gz"
+    curl --fail --location --silent --show-error \
+      "https://github.com/casey/just/releases/download/$JUST_VERSION/$archive" \
+      --output "$download_dir/$archive"
+    printf '%s  %s\n' "$just_sha256" "$download_dir/$archive" | sha256sum --check
+    tar -xzf "$download_dir/$archive" -C "$download_dir"
+    install -D -m 0755 "$download_dir/just" "$HOME/.local/bin/just"
+  )
+fi
+
+printf '[setup] Installing PlatformIO packages\n'
+pio pkg install
+
+printf '[setup] Ready: %s; %s; %s\n' "$(pio --version)" "$(just --version)" \
+  "$(prek --version)"
