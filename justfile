@@ -10,10 +10,10 @@ default:
 install:
     pio pkg install
 
-# Create the ignored local Wi-Fi configuration if it is missing
+# Create the optional ignored first-boot Wi-Fi fallback if it is missing
 setup:
     @test -f include/wifi_config.h || cp include/wifi_config.example.h include/wifi_config.h
-    @echo "Edit include/wifi_config.h with your Wi-Fi credentials."
+    @echo "Optional: edit include/wifi_config.h with first-boot Wi-Fi credentials."
 
 # Run native Pomodoro engine tests
 test:

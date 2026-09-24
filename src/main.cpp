@@ -8,6 +8,7 @@
 #include "services/clock_service.h"
 #include "services/session_store.h"
 #include "services/settings_store.h"
+#include "services/wifi_service.h"
 #include "ui/app_ui.h"
 
 namespace {
@@ -15,11 +16,12 @@ namespace {
 board::DisplayDriver display;
 board::TouchDriver touch;
 pomodoro::Engine timer;
-services::ClockService clockService;
+services::WifiService wifiService;
+services::ClockService clockService(wifiService);
 services::SettingsStore settingsStore;
 services::SessionStore sessionStore;
 services::Settings settings;
-ui::AppUi appUi(timer, clockService, settings, settingsStore);
+ui::AppUi appUi(timer, clockService, wifiService, settings, settingsStore);
 
 std::uint32_t lastActivityMs = 0;
 bool dimmed = false;
@@ -59,7 +61,7 @@ void setup() {
     Serial.println("WARNING: no GT911 response at 0x5D or 0x14");
   }
 
-  clockService.begin();
+  wifiService.begin();
   sessionStore.restore(timer, esp_timer_get_time(), clockService.timeValid());
   lastSavedSession = timer.snapshot(esp_timer_get_time());
   savedWithWallTime = lastSavedSession.state != pomodoro::State::Running ||
@@ -70,6 +72,7 @@ void setup() {
 
 void loop() {
   const std::uint64_t nowUs = esp_timer_get_time();
+  wifiService.update();
   clockService.update();
   timer.update(nowUs);
   const pomodoro::Snapshot session = timer.snapshot(nowUs);

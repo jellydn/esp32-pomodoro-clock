@@ -21,8 +21,19 @@ Run milestones in this order. Do not skip failed hardware checks.
 
 ## 4. Wi-Fi and NTP
 
-- [ ] Association, DHCP, RSSI, gateway, and DNS are visible in diagnostics.
-- [ ] Wrong credentials and AP loss do not block the UI.
+- [ ] Tapping the Wi-Fi icon opens settings; Back returns to the active timer unchanged.
+- [ ] Scan remains responsive and lists the strongest unique visible SSIDs with RSSI and security.
+- [ ] Selecting an open network starts connection without a password prompt.
+- [ ] Selecting a secured network shows a masked touch keyboard and rejects passwords under eight
+      characters.
+- [ ] Connecting and connected states name the selected SSID without showing its password.
+- [ ] Association and DHCP complete; serial diagnostics show IP and RSSI but no credentials.
+- [ ] Wrong credentials show an error, do not replace known-good credentials, and do not block the
+      timer or touch UI.
+- [ ] AP loss shows offline state and retries the saved network without blocking the UI.
+- [ ] A network selected in settings reconnects after reset.
+- [ ] Forget disconnects, clears saved credentials, and keeps the compile-time fallback disabled
+      after reset.
 - [ ] Asia/Singapore time becomes valid and continues offline while powered.
 
 ## 5. Clock

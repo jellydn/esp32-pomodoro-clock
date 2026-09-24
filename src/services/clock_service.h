@@ -2,11 +2,14 @@
 
 #include <Arduino.h>
 
+#include "wifi_service.h"
+
 namespace services {
 
 class ClockService {
  public:
-  void begin();
+  explicit ClockService(WifiService& wifi);
+
   void update();
   bool timeValid() const;
   bool wifiConnected() const;
@@ -14,9 +17,7 @@ class ClockService {
   void formatDate(char* destination, std::size_t length) const;
 
  private:
-  void startWifi();
-
-  std::uint32_t lastConnectAttemptMs_{0};
+  WifiService& wifi_;
   bool ntpConfigured_{false};
 };
 

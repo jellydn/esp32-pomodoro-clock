@@ -20,7 +20,7 @@ ESP32-S3 480×272 display.
 - 📊 Visual progress, current phase, and completed-focus count
 - 💾 Versioned Preferences/NVS settings and session state
 - 🌙 Automatic backlight dimming after inactivity
-- 📡 Non-blocking Wi-Fi reconnect with connection diagnostics
+- 📡 Touch Wi-Fi setup with nearby-network scan, saved credentials, and non-blocking reconnect
 - 🔔 Visual completion alert; optional sound is reserved for verified speaker hardware
 
 The board profile is based on the matching factory package and must pass the checks in
@@ -44,14 +44,19 @@ The board profile is based on the matching factory package and must pass the che
 
 ## 🚀 Quick start
 
-Install dependencies and create the ignored local Wi-Fi configuration:
+Install dependencies:
 
 ```sh
 just install
-just setup
 ```
 
-Edit only `include/wifi_config.h`. Do not commit credentials.
+After upload, tap the Wi-Fi icon, scan for a network, select it, and enter its password on the
+touch keyboard. The password is masked and saved to the ESP32 Preferences/NVS store only after a
+successful connection. The settings screen can also forget the saved network.
+
+For unattended first boot, `just setup` creates the ignored `include/wifi_config.h` fallback.
+Edit only that ignored file and never commit credentials. A network selected on the device takes
+priority over the fallback; after **Forget**, the fallback stays disabled.
 
 Build and test:
 
@@ -77,6 +82,19 @@ Session state is written only on transitions. A running phase stores a wall-cloc
 time is trusted. If firmware restarts without trusted time, the saved phase restores paused
 instead of guessing how much time passed while power was off. NVS writes occur only on state
 transitions, not once per second.
+
+## 📡 Wi-Fi setup
+
+The Wi-Fi icon opens the settings screen. Scans and connection attempts are asynchronous, so the
+timer and touch UI continue to run. The screen lists up to eight strongest unique visible
+networks, marks open and secured networks, and reports scanning, connecting, connected, offline,
+timeout, unavailable-network, and authentication-failure states.
+
+Passwords are limited to the ESP32 station limit, are not printed to serial output, and remain
+masked during entry. A new SSID and password replace the saved credentials only after the station
+connects. **Forget** clears the application credentials and the ESP32 station configuration.
+Preferences/NVS is suitable for device-local configuration, but it is not a defense against an
+attacker with physical flash access.
 
 ## 📦 Project structure
 
