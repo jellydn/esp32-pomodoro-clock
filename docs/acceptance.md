@@ -27,6 +27,10 @@ Run milestones in this order. Do not skip failed hardware checks.
 - [ ] Selecting an open network starts connection without a password prompt.
 - [ ] Selecting a secured network shows a masked touch keyboard and rejects passwords under eight
       characters.
+- [ ] The keyboard Close key hides the keyboard without clearing the password; tapping the password
+      field opens it again, and Back and Connect stay reachable in both states.
+- [ ] The keyboard OK key starts connection for a valid password and keeps the credential screen
+      visible for a validation error.
 - [ ] Connecting and connected states name the selected SSID without showing its password.
 - [ ] Association and DHCP complete; serial diagnostics show IP and RSSI but no credentials.
 - [ ] Wrong credentials show an error, do not replace known-good credentials, and do not block the

@@ -29,6 +29,8 @@ class AppUi {
   static void onNetwork(lv_event_t* event);
   static void onCredentialBack(lv_event_t* event);
   static void onConnect(lv_event_t* event);
+  static void onPasswordField(lv_event_t* event);
+  static void onKeyboard(lv_event_t* event);
   static lv_obj_t* makeButton(lv_obj_t* parent, const char* text, lv_coord_t x,
                               lv_event_cb_t callback, AppUi* self);
   static lv_obj_t* makeSmallButton(lv_obj_t* parent, const char* text, lv_coord_t x,
@@ -41,6 +43,8 @@ class AppUi {
   void showWifi();
   void showTimer();
   void showCredentials(const char* ssid, bool secure);
+  void showKeyboard();
+  void hideKeyboard();
   void connectSelectedNetwork();
   void rebuildNetworkList();
   void updateWifiView();
