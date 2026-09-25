@@ -4,23 +4,25 @@
 
 #include "core/wifi_connection_policy.h"
 
-using wifi::DisconnectFailure;
+using wifi::DisconnectAction;
 
 namespace {
 
 void test_ignores_voluntary_disconnect_from_wifi_begin() {
-  TEST_ASSERT_EQUAL(static_cast<int>(DisconnectFailure::Ignore),
+  TEST_ASSERT_EQUAL(static_cast<int>(DisconnectAction::Ignore),
                     static_cast<int>(wifi::classifyDisconnectReason(8)));
 }
 
 void test_maps_actionable_disconnect_reasons() {
-  TEST_ASSERT_EQUAL(static_cast<int>(DisconnectFailure::NetworkUnavailable),
+  TEST_ASSERT_EQUAL(static_cast<int>(DisconnectAction::Retry),
+                    static_cast<int>(wifi::classifyDisconnectReason(2)));
+  TEST_ASSERT_EQUAL(static_cast<int>(DisconnectAction::NetworkUnavailable),
                     static_cast<int>(wifi::classifyDisconnectReason(201)));
-  TEST_ASSERT_EQUAL(static_cast<int>(DisconnectFailure::Authentication),
+  TEST_ASSERT_EQUAL(static_cast<int>(DisconnectAction::Authentication),
                     static_cast<int>(wifi::classifyDisconnectReason(202)));
-  TEST_ASSERT_EQUAL(static_cast<int>(DisconnectFailure::UnsupportedSecurity),
+  TEST_ASSERT_EQUAL(static_cast<int>(DisconnectAction::UnsupportedSecurity),
                     static_cast<int>(wifi::classifyDisconnectReason(20)));
-  TEST_ASSERT_EQUAL(static_cast<int>(DisconnectFailure::Connection),
+  TEST_ASSERT_EQUAL(static_cast<int>(DisconnectAction::Retry),
                     static_cast<int>(wifi::classifyDisconnectReason(203)));
 }
 

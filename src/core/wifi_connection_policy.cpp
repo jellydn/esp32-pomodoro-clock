@@ -14,9 +14,12 @@ constexpr std::uint8_t kReasonInvalidRsnCapabilities = 22;
 constexpr std::uint8_t kReasonEnterpriseAuthenticationFailed = 23;
 constexpr std::uint8_t kReasonCipherSuiteRejected = 24;
 constexpr std::uint8_t kReasonBadCipherOrAuthenticationMode = 29;
+constexpr std::uint8_t kReasonBeaconTimeout = 200;
 constexpr std::uint8_t kReasonNoAccessPointFound = 201;
 constexpr std::uint8_t kReasonAuthenticationFailed = 202;
+constexpr std::uint8_t kReasonAssociationFailed = 203;
 constexpr std::uint8_t kReasonHandshakeTimeout = 204;
+constexpr std::uint8_t kReasonConnectionFailed = 205;
 
 bool isHexDigit(char value) {
   return (value >= '0' && value <= '9') || (value >= 'a' && value <= 'f') ||
@@ -24,26 +27,30 @@ bool isHexDigit(char value) {
 }
 }  // namespace
 
-DisconnectFailure classifyDisconnectReason(std::uint8_t reason) {
+DisconnectAction classifyDisconnectReason(std::uint8_t reason) {
   if (reason == kReasonAssociationLeave) {
-    return DisconnectFailure::Ignore;
-  }
-  if (reason == kReasonNoAccessPointFound) {
-    return DisconnectFailure::NetworkUnavailable;
+    return DisconnectAction::Ignore;
   }
   if (reason == kReasonAuthExpire || reason == kReasonFourWayHandshakeTimeout ||
-      reason == kReasonEnterpriseAuthenticationFailed ||
-      reason == kReasonAuthenticationFailed || reason == kReasonHandshakeTimeout) {
-    return DisconnectFailure::Authentication;
+      reason == kReasonBeaconTimeout || reason == kReasonAssociationFailed ||
+      reason == kReasonHandshakeTimeout || reason == kReasonConnectionFailed) {
+    return DisconnectAction::Retry;
+  }
+  if (reason == kReasonNoAccessPointFound) {
+    return DisconnectAction::NetworkUnavailable;
+  }
+  if (reason == kReasonEnterpriseAuthenticationFailed ||
+      reason == kReasonAuthenticationFailed) {
+    return DisconnectAction::Authentication;
   }
   if (reason == kReasonGroupCipherInvalid || reason == kReasonPairwiseCipherInvalid ||
       reason == kReasonAuthenticationModeInvalid ||
       reason == kReasonUnsupportedRsnVersion ||
       reason == kReasonInvalidRsnCapabilities || reason == kReasonCipherSuiteRejected ||
       reason == kReasonBadCipherOrAuthenticationMode) {
-    return DisconnectFailure::UnsupportedSecurity;
+    return DisconnectAction::UnsupportedSecurity;
   }
-  return DisconnectFailure::Connection;
+  return DisconnectAction::Connection;
 }
 
 bool isValidPersonalPassword(const char* password, std::size_t length) {

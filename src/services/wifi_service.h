@@ -72,6 +72,7 @@ class WifiService {
   volatile std::uint32_t gotIpGeneration_{0};
   volatile std::uint8_t disconnectReason_{0};
   volatile bool associated_{false};
+  std::uint8_t lastRetryReason_{0};
   char savedSsid_[33]{};
   char savedPassword_[65]{};
   char pendingSsid_[33]{};

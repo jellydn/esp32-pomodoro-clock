@@ -43,6 +43,8 @@ Run milestones in this order. Do not skip failed hardware checks.
       timer or touch UI.
 - [ ] A failed connection shows the numeric and named disconnect reason on screen and serial, for
       example `202 AUTH_FAIL`. Record the complete `Wi-Fi stage=...` lines for diagnosis.
+- [ ] A transient reason such as `2 AUTH_EXPIRE` shows `stage=retrying` and remains in the
+      connecting state. It succeeds on a later attempt or reports the same reason after 30 seconds.
 - [ ] A 63-character passphrase and a 64-character hexadecimal PSK can connect without truncation.
 - [ ] AP loss shows offline state and retries the saved network without blocking the UI.
 - [ ] A network selected in settings reconnects after reset.

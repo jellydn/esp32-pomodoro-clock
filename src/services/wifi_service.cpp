@@ -97,6 +97,7 @@ void WifiService::update() {
         WiFi.SSID().equals(pendingSsid_)) {
       state_ = WifiState::Connected;
       connectionStage_ = ConnectionStage::Idle;
+      WiFi.setAutoReconnect(false);
       error_[0] = '\0';
       if (saveOnSuccess_) {
         savePendingCredentials();
@@ -108,9 +109,15 @@ void WifiService::update() {
 
     if (disconnectGeneration_ != attemptDisconnectGeneration_) {
       const std::uint8_t reason = disconnectReason_;
-      if (wifi::classifyDisconnectReason(reason) == wifi::DisconnectFailure::Ignore) {
+      const wifi::DisconnectAction action = wifi::classifyDisconnectReason(reason);
+      if (action == wifi::DisconnectAction::Ignore) {
         attemptDisconnectGeneration_ = disconnectGeneration_;
         Serial.println("Wi-Fi stage=connecting; ignored voluntary driver disconnect");
+      } else if (action == wifi::DisconnectAction::Retry) {
+        attemptDisconnectGeneration_ = disconnectGeneration_;
+        lastRetryReason_ = reason;
+        Serial.printf("Wi-Fi stage=retrying reason=%u (%s)\n", reason,
+                      WiFi.disconnectReasonName(static_cast<wifi_err_reason_t>(reason)));
       } else {
         failForDisconnectReason(reason);
       }
@@ -118,9 +125,13 @@ void WifiService::update() {
     }
 
     if (millis() - attemptStartedMs_ >= kConnectTimeoutMs) {
-      failConnection(associated_ ? "IP address request timed out."
-                                 : "Wi-Fi association timed out.",
-                     true);
+      if (lastRetryReason_ != 0) {
+        failForDisconnectReason(lastRetryReason_);
+      } else {
+        failConnection(associated_ ? "IP address request timed out."
+                                   : "Wi-Fi association timed out.",
+                       true);
+      }
     }
     return;
   }
@@ -168,6 +179,7 @@ bool WifiService::connect(const char* ssid, const char* password) {
 }
 
 void WifiService::forget() {
+  WiFi.setAutoReconnect(false);
   Preferences preferences;
   preferences.begin("wifi", false);
   preferences.remove("ssid");
@@ -267,8 +279,10 @@ void WifiService::startConnection(const char* ssid, const char* password,
 void WifiService::beginPendingConnection() {
   connectionStage_ = ConnectionStage::WaitingForIp;
   associated_ = false;
+  lastRetryReason_ = 0;
   attemptDisconnectGeneration_ = disconnectGeneration_;
   attemptGotIpGeneration_ = gotIpGeneration_;
+  WiFi.setAutoReconnect(true);
   WiFi.begin(pendingSsid_, pendingPassword_);
   attemptStartedMs_ = millis();
   const std::size_t passwordLength = strlen(pendingPassword_);
@@ -287,17 +301,20 @@ void WifiService::beginPendingConnection() {
 void WifiService::failForDisconnectReason(std::uint8_t reason) {
   const char* summary = "Connection failed";
   switch (wifi::classifyDisconnectReason(reason)) {
-    case wifi::DisconnectFailure::NetworkUnavailable:
+    case wifi::DisconnectAction::Retry:
+      summary = "Connection timed out after retries";
+      break;
+    case wifi::DisconnectAction::NetworkUnavailable:
       summary = "Network unavailable";
       break;
-    case wifi::DisconnectFailure::Authentication:
+    case wifi::DisconnectAction::Authentication:
       summary = "Authentication failed";
       break;
-    case wifi::DisconnectFailure::UnsupportedSecurity:
+    case wifi::DisconnectAction::UnsupportedSecurity:
       summary = "Unsupported network security";
       break;
-    case wifi::DisconnectFailure::Ignore:
-    case wifi::DisconnectFailure::Connection:
+    case wifi::DisconnectAction::Ignore:
+    case wifi::DisconnectAction::Connection:
       break;
   }
   char message[sizeof(error_)];
@@ -309,6 +326,7 @@ void WifiService::failForDisconnectReason(std::uint8_t reason) {
 void WifiService::failConnection(const char* message, bool disconnectFirst) {
   setError(message);
   Serial.printf("Wi-Fi stage=failed message=\"%s\"\n", message);
+  WiFi.setAutoReconnect(false);
   if (disconnectFirst) {
     connectionStage_ = ConnectionStage::WaitingForCleanup;
     attemptDisconnectGeneration_ = disconnectGeneration_;
@@ -367,33 +385,44 @@ void WifiService::savePendingCredentials() {
 
 void WifiService::finishScan(std::int16_t count) {
   networkCount_ = 0;
-  for (std::int16_t index = 0;
-       index < count && networkCount_ < kMaxNetworks; ++index) {
+  for (std::int16_t index = 0; index < count; ++index) {
     const String ssid = WiFi.SSID(index);
     if (ssid.isEmpty()) {
       continue;
     }
 
+    const std::uint8_t authMode =
+        static_cast<std::uint8_t>(WiFi.encryptionType(index));
+    WifiNetwork* network = nullptr;
     bool duplicate = false;
     for (std::size_t existing = 0; existing < networkCount_; ++existing) {
       if (ssid.equals(networks_[existing].ssid)) {
-        duplicate = true;
+        if (supportsSecurity(authMode) &&
+            !supportsSecurity(networks_[existing].authMode)) {
+          network = &networks_[existing];
+        } else {
+          duplicate = true;
+        }
         break;
       }
     }
     if (duplicate) {
       continue;
     }
-
-    WifiNetwork& network = networks_[networkCount_++];
-    copyText(network.ssid, sizeof(network.ssid), ssid.c_str());
-    network.rssi = WiFi.RSSI(index);
-    network.authMode = static_cast<std::uint8_t>(WiFi.encryptionType(index));
-    network.secure = network.authMode != WIFI_AUTH_OPEN;
+    if (network == nullptr) {
+      if (networkCount_ == kMaxNetworks) {
+        continue;
+      }
+      network = &networks_[networkCount_++];
+    }
+    copyText(network->ssid, sizeof(network->ssid), ssid.c_str());
+    network->rssi = WiFi.RSSI(index);
+    network->authMode = authMode;
+    network->secure = authMode != WIFI_AUTH_OPEN;
     Serial.printf("Wi-Fi scan ssid=\"%s\" rssi=%ld auth=%u (%s) supported=%s\n",
-                  network.ssid, static_cast<long>(network.rssi), network.authMode,
-                  securityName(network.authMode),
-                  supportsSecurity(network.authMode) ? "yes" : "no");
+                  network->ssid, static_cast<long>(network->rssi), network->authMode,
+                  securityName(network->authMode),
+                  supportsSecurity(network->authMode) ? "yes" : "no");
   }
   WiFi.scanDelete();
   ++scanGeneration_;

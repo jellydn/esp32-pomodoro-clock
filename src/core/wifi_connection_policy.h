@@ -5,15 +5,16 @@
 
 namespace wifi {
 
-enum class DisconnectFailure : std::uint8_t {
+enum class DisconnectAction : std::uint8_t {
   Ignore,
+  Retry,
   NetworkUnavailable,
   Authentication,
   UnsupportedSecurity,
   Connection,
 };
 
-DisconnectFailure classifyDisconnectReason(std::uint8_t reason);
+DisconnectAction classifyDisconnectReason(std::uint8_t reason);
 bool isValidPersonalPassword(const char* password, std::size_t length);
 
 }  // namespace wifi
