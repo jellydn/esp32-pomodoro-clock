@@ -85,6 +85,11 @@ transitions, not once per second.
 
 ## 📡 Wi-Fi setup
 
+Wi-Fi is optional. The Pomodoro timer uses the chip's monotonic clock and keeps running while the
+board is offline. Use Wi-Fi to set Asia/Singapore time for the clock and date, and to restore the
+remaining time of a running session after a restart. Without trusted time, the clock shows
+`--:--:--` and `Waiting for NTP`, and a running session restores paused.
+
 The Wi-Fi icon opens the settings screen. Scans and connection attempts are asynchronous, so the
 timer and touch UI continue to run. The screen lists up to eight strongest unique visible
 networks, marks open and secured networks, and reports scanning, connecting, connected, offline,
