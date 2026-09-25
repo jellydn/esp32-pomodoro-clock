@@ -101,6 +101,8 @@ void AppUi::begin() {
   lv_obj_set_pos(networkList_, 8, 92);
   lv_obj_set_style_bg_color(networkList_, LV_COLOR_MAKE(27, 33, 44), 0);
   lv_obj_set_style_border_width(networkList_, 0, 0);
+  lv_obj_set_scroll_dir(networkList_, LV_DIR_VER);
+  lv_obj_set_scrollbar_mode(networkList_, LV_SCROLLBAR_MODE_AUTO);
 
   credentialView_ = lv_obj_create(screen);
   lv_obj_set_size(credentialView_, 480, 272);
@@ -438,6 +440,9 @@ void AppUi::updateWifiView() {
     snprintf(status, sizeof(status), "%s", wifi_.error());
   } else if (state == services::WifiState::Disconnected) {
     snprintf(status, sizeof(status), "Offline. Reconnecting automatically.");
+  } else if (wifi_.scanGeneration() > 0) {
+    snprintf(status, sizeof(status), "Found %u 2.4 GHz networks. Swipe list.",
+             static_cast<unsigned>(wifi_.networkCount()));
   } else {
     snprintf(status, sizeof(status), "No saved network. Select one below.");
   }

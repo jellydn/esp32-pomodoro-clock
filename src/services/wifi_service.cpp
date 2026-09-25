@@ -17,6 +17,7 @@ namespace services {
 namespace {
 constexpr std::uint32_t kConnectTimeoutMs = 30000;
 constexpr std::uint32_t kReconnectIntervalMs = 30000;
+constexpr std::uint32_t kScanTimePerChannelMs = 500;
 
 void copyText(char* destination, std::size_t size, const char* source) {
   snprintf(destination, size, "%s", source == nullptr ? "" : source);
@@ -155,7 +156,8 @@ void WifiService::scan() {
   }
   error_[0] = '\0';
   WiFi.scanDelete();
-  const std::int16_t result = WiFi.scanNetworks(true, false, false, 300);
+  const std::int16_t result =
+      WiFi.scanNetworks(true, false, true, kScanTimePerChannelMs);
   if (result == WIFI_SCAN_FAILED) {
     setError("Could not start scan.");
     state_ = connected() ? WifiState::Connected
@@ -384,6 +386,7 @@ void WifiService::savePendingCredentials() {
 }
 
 void WifiService::finishScan(std::int16_t count) {
+  Serial.printf("Wi-Fi scan complete raw=%d\n", count);
   networkCount_ = 0;
   for (std::int16_t index = 0; index < count; ++index) {
     const String ssid = WiFi.SSID(index);
@@ -424,6 +427,8 @@ void WifiService::finishScan(std::int16_t count) {
                   securityName(network->authMode),
                   supportsSecurity(network->authMode) ? "yes" : "no");
   }
+  Serial.printf("Wi-Fi scan stored=%u unique 2.4 GHz SSIDs\n",
+                static_cast<unsigned>(networkCount_));
   WiFi.scanDelete();
   ++scanGeneration_;
   state_ = connected() ? WifiState::Connected

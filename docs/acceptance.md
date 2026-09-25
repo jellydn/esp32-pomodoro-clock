@@ -23,7 +23,9 @@ Run milestones in this order. Do not skip failed hardware checks.
 ## 4. Wi-Fi and NTP
 
 - [ ] Tapping the Wi-Fi icon opens settings; Back returns to the active timer unchanged.
-- [ ] Scan remains responsive and lists the strongest unique visible SSIDs with RSSI and security.
+- [ ] The passive scan remains responsive, reports raw and unique counts on serial, and lists up to
+      eight strongest unique visible 2.4 GHz SSIDs with RSSI and security. Swipe vertically when
+      the screen reports more networks than fit at once.
 - [ ] The test SSID has a 2.4 GHz radio and WPA2-Personal, WPA3-Personal, or WPA2/WPA3
       transition security. WEP, WPA-only, and enterprise networks are marked unsupported.
 - [ ] Selecting an open network starts connection without a password prompt.

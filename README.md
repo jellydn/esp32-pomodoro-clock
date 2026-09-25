@@ -90,9 +90,10 @@ board is offline. Use Wi-Fi to set Asia/Singapore time for the clock and date, a
 remaining time of a running session after a restart. Without trusted time, the clock shows
 `--:--:--` and `Waiting for NTP`, and a running session restores paused.
 
-The Wi-Fi icon opens the settings screen. Scans and connection attempts are asynchronous, so the
-timer and touch UI continue to run. The screen lists up to eight strongest unique visible
-networks, marks open and secured networks, and reports scanning, connecting, connected, offline,
+The Wi-Fi icon opens the settings screen. Passive scans and connection attempts are asynchronous,
+so the timer and touch UI continue to run. The screen lists up to eight strongest unique visible
+2.4 GHz networks, shows the result count, and marks open and secured networks. Swipe the list to
+see rows that do not fit on screen. The status reports scanning, connecting, connected, offline,
 timeout, unavailable-network, and authentication-failure states.
 
 Passwords are limited to the ESP32 station limit, are not printed to serial output, and remain
