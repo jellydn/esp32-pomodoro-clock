@@ -128,11 +128,14 @@ void AppUi::begin() {
   lv_textarea_set_password_mode(passwordField_, true);
   lv_textarea_set_max_length(passwordField_, 63);
   lv_textarea_set_placeholder_text(passwordField_, "Wi-Fi password");
+  lv_obj_add_event_cb(passwordField_, onPasswordField, LV_EVENT_ALL, this);
 
-  keyboard_ = lv_keyboard_create(credentialView_);
-  lv_obj_set_size(keyboard_, 480, 142);
-  lv_obj_set_pos(keyboard_, 0, 130);
-  lv_keyboard_set_textarea(keyboard_, passwordField_);
+  keyboard_ = lv_keyboard_create(screen);
+  lv_obj_set_size(keyboard_, 480, 136);
+  lv_obj_align(keyboard_, LV_ALIGN_BOTTOM_MID, 0, 0);
+  lv_obj_add_event_cb(keyboard_, onKeyboard, LV_EVENT_READY, this);
+  lv_obj_add_event_cb(keyboard_, onKeyboard, LV_EVENT_CANCEL, this);
+  lv_obj_add_flag(keyboard_, LV_OBJ_FLAG_HIDDEN);
 
   lv_obj_add_flag(wifiView_, LV_OBJ_FLAG_HIDDEN);
   lv_obj_add_flag(credentialView_, LV_OBJ_FLAG_HIDDEN);
@@ -237,12 +240,29 @@ void AppUi::onNetwork(lv_event_t* event) {
 void AppUi::onCredentialBack(lv_event_t* event) {
   AppUi* app = static_cast<AppUi*>(lv_event_get_user_data(event));
   lv_textarea_set_text(app->passwordField_, "");
+  app->hideKeyboard();
   lv_obj_add_flag(app->credentialView_, LV_OBJ_FLAG_HIDDEN);
   lv_obj_clear_flag(app->wifiView_, LV_OBJ_FLAG_HIDDEN);
 }
 
 void AppUi::onConnect(lv_event_t* event) {
   static_cast<AppUi*>(lv_event_get_user_data(event))->connectSelectedNetwork();
+}
+
+void AppUi::onPasswordField(lv_event_t* event) {
+  const lv_event_code_t code = lv_event_get_code(event);
+  if (code == LV_EVENT_CLICKED || code == LV_EVENT_FOCUSED) {
+    static_cast<AppUi*>(lv_event_get_user_data(event))->showKeyboard();
+  }
+}
+
+void AppUi::onKeyboard(lv_event_t* event) {
+  AppUi* app = static_cast<AppUi*>(lv_event_get_user_data(event));
+  if (lv_event_get_code(event) == LV_EVENT_READY) {
+    app->connectSelectedNetwork();
+  } else {
+    app->hideKeyboard();
+  }
 }
 
 lv_obj_t* AppUi::makeButton(lv_obj_t* parent, const char* text, lv_coord_t x,
@@ -296,6 +316,7 @@ void AppUi::handleTimeFormat() {
 }
 
 void AppUi::showWifi() {
+  hideKeyboard();
   lv_obj_add_flag(timerView_, LV_OBJ_FLAG_HIDDEN);
   lv_obj_add_flag(credentialView_, LV_OBJ_FLAG_HIDDEN);
   lv_obj_clear_flag(wifiView_, LV_OBJ_FLAG_HIDDEN);
@@ -306,6 +327,7 @@ void AppUi::showWifi() {
 }
 
 void AppUi::showTimer() {
+  hideKeyboard();
   lv_obj_add_flag(wifiView_, LV_OBJ_FLAG_HIDDEN);
   lv_obj_add_flag(credentialView_, LV_OBJ_FLAG_HIDDEN);
   lv_obj_clear_flag(timerView_, LV_OBJ_FLAG_HIDDEN);
@@ -323,7 +345,23 @@ void AppUi::showCredentials(const char* ssid, bool secure) {
   lv_label_set_text(credentialStatus_, "Enter the network password");
   lv_textarea_set_text(passwordField_, "");
   lv_obj_add_flag(wifiView_, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_move_foreground(credentialView_);
   lv_obj_clear_flag(credentialView_, LV_OBJ_FLAG_HIDDEN);
+  showKeyboard();
+}
+
+void AppUi::showKeyboard() {
+  lv_keyboard_set_textarea(keyboard_, passwordField_);
+  lv_obj_clear_flag(keyboard_, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_move_foreground(keyboard_);
+  lv_obj_add_state(passwordField_, LV_STATE_FOCUSED);
+}
+
+void AppUi::hideKeyboard() {
+  lv_keyboard_set_textarea(keyboard_, nullptr);
+  lv_obj_add_flag(keyboard_, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_clear_state(passwordField_, LV_STATE_FOCUSED);
+  lv_indev_reset(nullptr, passwordField_);
 }
 
 void AppUi::connectSelectedNetwork() {
@@ -337,6 +375,7 @@ void AppUi::connectSelectedNetwork() {
     return;
   }
   lv_textarea_set_text(passwordField_, "");
+  hideKeyboard();
   lv_obj_add_flag(credentialView_, LV_OBJ_FLAG_HIDDEN);
   lv_obj_clear_flag(wifiView_, LV_OBJ_FLAG_HIDDEN);
   updateWifiView();
