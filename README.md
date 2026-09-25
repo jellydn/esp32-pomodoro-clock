@@ -101,6 +101,11 @@ connects. **Forget** clears the application credentials and the ESP32 station co
 Preferences/NVS is suitable for device-local configuration, but it is not a defense against an
 attacker with physical flash access.
 
+The ESP32-S3 radio uses 2.4 GHz Wi-Fi. The touch setup supports open, WPA2-Personal,
+WPA3-Personal, and WPA2/WPA3 transition networks. WEP, WPA-only, and enterprise networks are
+listed as unsupported instead of being reported as a bad password. Connection diagnostics report
+the stage, SSID, credential lengths, and the exact disconnect reason, but never the password.
+
 ## 📦 Project structure
 
 ```text

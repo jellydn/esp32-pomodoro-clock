@@ -2,6 +2,8 @@
 
 #include <Arduino.h>
 
+#include "core/wifi_connection_policy.h"
+
 namespace ui {
 
 namespace {
@@ -126,7 +128,7 @@ void AppUi::begin() {
   lv_obj_set_pos(passwordField_, 12, 76);
   lv_textarea_set_one_line(passwordField_, true);
   lv_textarea_set_password_mode(passwordField_, true);
-  lv_textarea_set_max_length(passwordField_, 63);
+  lv_textarea_set_max_length(passwordField_, 64);
   lv_textarea_set_placeholder_text(passwordField_, "Wi-Fi password");
   lv_obj_add_event_cb(passwordField_, onPasswordField, LV_EVENT_ALL, this);
 
@@ -232,6 +234,11 @@ void AppUi::onNetwork(lv_event_t* event) {
   const services::WifiState state = choice->app->wifi_.state();
   if (choice->scanGeneration != choice->app->wifi_.scanGeneration() ||
       state == services::WifiState::Scanning || state == services::WifiState::Connecting) {
+    return;
+  }
+  if (!choice->supported) {
+    lv_label_set_text(choice->app->wifiStatusLabel_,
+                      "This network security is not supported.");
     return;
   }
   choice->app->showCredentials(choice->ssid, choice->secure);
@@ -366,8 +373,12 @@ void AppUi::hideKeyboard() {
 
 void AppUi::connectSelectedNetwork() {
   const char* password = lv_textarea_get_text(passwordField_);
-  if (strlen(password) < 8) {
-    lv_label_set_text(credentialStatus_, "Password must have at least 8 characters");
+  const std::size_t passwordLength = strlen(password);
+  if (!wifi::isValidPersonalPassword(password, passwordLength)) {
+    lv_label_set_text(credentialStatus_,
+                      passwordLength == 64
+                          ? "A 64-character key must use only hexadecimal digits"
+                          : "Password must have 8 to 63 printable characters");
     return;
   }
   if (!wifi_.connect(selectedSsid_, password)) {
@@ -393,16 +404,23 @@ void AppUi::rebuildNetworkList() {
 
   for (std::size_t index = 0; index < count; ++index) {
     const services::WifiNetwork& network = wifi_.network(index);
-    char label[64];
-    snprintf(label, sizeof(label), "%s  %ld dBm  %s", network.ssid,
-             static_cast<long>(network.rssi), network.secure ? "secured" : "open");
+    const bool supported = services::WifiService::supportsSecurity(network.authMode);
+    char label[80];
+    snprintf(label, sizeof(label), "%s  %ld dBm  %s%s", network.ssid,
+             static_cast<long>(network.rssi),
+             services::WifiService::securityName(network.authMode),
+             supported ? "" : " (unsupported)");
     networkChoices_[index].app = this;
     networkChoices_[index].scanGeneration = wifi_.scanGeneration();
     snprintf(networkChoices_[index].ssid, sizeof(networkChoices_[index].ssid), "%s",
              network.ssid);
     networkChoices_[index].secure = network.secure;
+    networkChoices_[index].supported = supported;
     lv_obj_t* button = lv_list_add_btn(networkList_, LV_SYMBOL_WIFI, label);
     lv_obj_add_event_cb(button, onNetwork, LV_EVENT_CLICKED, &networkChoices_[index]);
+    if (!supported) {
+      lv_obj_add_state(button, LV_STATE_DISABLED);
+    }
   }
 }
 
@@ -412,7 +430,8 @@ void AppUi::updateWifiView() {
   if (state == services::WifiState::Scanning) {
     snprintf(status, sizeof(status), "Scanning for nearby networks...");
   } else if (state == services::WifiState::Connecting) {
-    snprintf(status, sizeof(status), "Connecting to %s...", wifi_.connectedSsid());
+    snprintf(status, sizeof(status), "%s: %s...", wifi_.connectionStatus(),
+             wifi_.connectedSsid());
   } else if (state == services::WifiState::Connected) {
     snprintf(status, sizeof(status), "Connected to %s", wifi_.connectedSsid());
   } else if (wifi_.error()[0] != '\0') {
@@ -434,7 +453,7 @@ void AppUi::updateWifiView() {
   const std::uint32_t networkRows = lv_obj_get_child_cnt(networkList_);
   for (std::uint32_t index = 0; index < networkRows; ++index) {
     lv_obj_t* row = lv_obj_get_child(networkList_, index);
-    if (busy) {
+    if (busy || !networkChoices_[index].supported) {
       lv_obj_add_state(row, LV_STATE_DISABLED);
     } else {
       lv_obj_clear_state(row, LV_STATE_DISABLED);
