@@ -17,6 +17,7 @@ Run milestones in this order. Do not skip failed hardware checks.
 
 - [ ] GT911 product ID and address are reported.
 - [ ] Center and four-corner targets work.
+- [ ] Start, Reset, 12/24h, and Wi-Fi controls respond at their displayed positions.
 - [ ] Press, release, and drag work without phantom input.
 
 ## 4. Wi-Fi and NTP

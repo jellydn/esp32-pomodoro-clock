@@ -1,13 +1,13 @@
 #include "touch_driver.h"
 
 #include "board_config.h"
+#include "gt911_touch_data.h"
 
 namespace board {
 
 namespace {
 constexpr std::uint16_t kProductIdRegister = 0x8140;
 constexpr std::uint16_t kStatusRegister = 0x814E;
-constexpr std::uint16_t kFirstPointRegister = 0x8150;
 }  // namespace
 
 bool TouchDriver::begin() {
@@ -80,15 +80,16 @@ bool TouchDriver::readPoint(std::uint16_t& x, std::uint16_t& y) {
     return false;
   }
 
-  std::uint8_t point[8]{};
-  const bool read = readRegister(kFirstPointRegister, point, sizeof(point));
+  Gt911PointData point{};
+  const bool read = readRegister(kGt911FirstPointRegister,
+                                 reinterpret_cast<std::uint8_t*>(&point), sizeof(point));
   writeRegister(kStatusRegister, 0);
   if (!read) {
     return false;
   }
 
-  x = static_cast<std::uint16_t>(point[1] | (point[2] << 8U));
-  y = static_cast<std::uint16_t>(point[3] | (point[4] << 8U));
+  x = gt911X(point);
+  y = gt911Y(point);
   return true;
 }
 
