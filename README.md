@@ -90,9 +90,10 @@ board is offline. Use Wi-Fi to set Asia/Singapore time for the clock and date, a
 remaining time of a running session after a restart. Without trusted time, the clock shows
 `--:--:--` and `Waiting for NTP`, and a running session restores paused.
 
-The Wi-Fi icon opens the settings screen. Scans and connection attempts are asynchronous, so the
-timer and touch UI continue to run. The screen lists up to eight strongest unique visible
-networks, marks open and secured networks, and reports scanning, connecting, connected, offline,
+The Wi-Fi icon opens the settings screen. Passive scans and connection attempts are asynchronous,
+so the timer and touch UI continue to run. The screen lists up to eight strongest unique visible
+2.4 GHz networks, shows the result count, and marks open and secured networks. Swipe the list to
+see rows that do not fit on screen. The status reports scanning, connecting, connected, offline,
 timeout, unavailable-network, and authentication-failure states.
 
 Passwords are limited to the ESP32 station limit, are not printed to serial output, and remain
@@ -100,6 +101,11 @@ masked during entry. A new SSID and password replace the saved credentials only 
 connects. **Forget** clears the application credentials and the ESP32 station configuration.
 Preferences/NVS is suitable for device-local configuration, but it is not a defense against an
 attacker with physical flash access.
+
+The ESP32-S3 radio uses 2.4 GHz Wi-Fi. The touch setup supports open, WPA2-Personal,
+WPA3-Personal, and WPA2/WPA3 transition networks. WEP, WPA-only, and enterprise networks are
+listed as unsupported instead of being reported as a bad password. Connection diagnostics report
+the stage, SSID, credential lengths, and the exact disconnect reason, but never the password.
 
 ## 📦 Project structure
 

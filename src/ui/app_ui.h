@@ -55,6 +55,7 @@ class AppUi {
     std::uint32_t scanGeneration{0};
     char ssid[33]{};
     bool secure{false};
+    bool supported{false};
   };
 
   pomodoro::Engine& engine_;

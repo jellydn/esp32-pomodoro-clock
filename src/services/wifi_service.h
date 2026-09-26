@@ -16,6 +16,7 @@ enum class WifiState : std::uint8_t {
 struct WifiNetwork {
   char ssid[33]{};
   std::int32_t rssi{0};
+  std::uint8_t authMode{0};
   bool secure{false};
 };
 
@@ -37,6 +38,9 @@ class WifiService {
   std::size_t networkCount() const;
   const WifiNetwork& network(std::size_t index) const;
   std::uint32_t scanGeneration() const;
+  const char* connectionStatus() const;
+  static const char* securityName(std::uint8_t authMode);
+  static bool supportsSecurity(std::uint8_t authMode);
 
  private:
   enum class ConnectionStage : std::uint8_t {
@@ -48,6 +52,7 @@ class WifiService {
 
   void startConnection(const char* ssid, const char* password, bool saveOnSuccess);
   void beginPendingConnection();
+  void failForDisconnectReason(std::uint8_t reason);
   void failConnection(const char* message, bool disconnectFirst = false);
   void resetWifiStorage();
   void loadCredentials();
@@ -66,11 +71,13 @@ class WifiService {
   volatile std::uint32_t disconnectGeneration_{0};
   volatile std::uint32_t gotIpGeneration_{0};
   volatile std::uint8_t disconnectReason_{0};
+  volatile bool associated_{false};
+  std::uint8_t lastRetryReason_{0};
   char savedSsid_[33]{};
-  char savedPassword_[64]{};
+  char savedPassword_[65]{};
   char pendingSsid_[33]{};
-  char pendingPassword_[64]{};
-  char error_[48]{};
+  char pendingPassword_[65]{};
+  char error_[96]{};
   ConnectionStage connectionStage_{ConnectionStage::Idle};
   bool saveOnSuccess_{false};
 };
